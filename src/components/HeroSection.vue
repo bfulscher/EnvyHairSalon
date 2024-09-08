@@ -10,11 +10,11 @@
           <p class="mb-4">
             From cutting-edge cuts to vibrant colors and luxurious treatments, we offer a full range of services to keep your hair looking its absolute best. Experience the Envy difference today!
           </p>
-          <button class="btn btn-primary btn-lg">Book Your Appointment</button>
+          <button @click="goToLogin" class="btn btn-primary btn-lg">Book Your Appointment</button>
         </div>
         <div class="col-md-6">
           <img
-            src="C:\Users\ybozh\OneDrive\Fall2024\IT391\envy_salon\src\assets\hero.jpg"
+            src="@/assets/hero.jpg"
             alt="Stylist working on client's hair"
             class="img-fluid rounded shadow"
           />
@@ -25,8 +25,21 @@
 </template>
 
 <script>
+import { useRouter } from 'vue-router'
+
 export default {
-  name: 'HeroSection'
+  name: 'HeroSection',
+  setup() {
+    const router = useRouter()
+
+    const goToLogin = () => {
+      router.push('/login')
+    }
+
+    return {
+      goToLogin
+    }
+  }
 }
 </script>
 
