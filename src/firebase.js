@@ -5,19 +5,19 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
+     apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
 
-  authDomain: "envysalon-1f155.firebaseapp.com",
+     authDomain: "envy-hair-salon-project.firebaseapp.com",
 
-  projectId: "envysalon-1f155",
-
-  storageBucket: "envysalon-1f155.appspot.com",
-
-  messagingSenderId: "44266186916",
-
-  appId: "1:44266186916:web:ce862317dc7aaacc895e31",
-
-  measurementId: "G-CB51RC8SDG"
+     projectId: "envy-hair-salon-project",
+   
+     storageBucket: "envy-hair-salon-project.appspot.com",
+   
+     messagingSenderId: "1028881372274",
+   
+     appId: "1:1028881372274:web:eac6479cfd1640b3211eeb",
+   
+     measurementId: "G-GW272WQER5"
   
 };
 
@@ -35,3 +35,4 @@ console.log('Auth initialized:', auth);
 console.log('Firestore initialized:', db);
 
 export { auth, db };
+
