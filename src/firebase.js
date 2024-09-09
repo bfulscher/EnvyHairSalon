@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAxBsCcXs6ItISOIKd7kL2NDFMxRBMd3oc",
+    apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
 
   authDomain: "envysalon-1f155.firebaseapp.com",
 
