@@ -44,9 +44,9 @@
 <script>
 import { ref } from 'vue'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
-import { auth, db } from '../firebase' // Make sure this path is correct
+import { auth, db } from '../firebase'
 
 export default {
   name: 'SignUpPage',
@@ -66,8 +66,6 @@ export default {
       try {
         console.log('Starting sign up process...')
         
-        // Create user with email and password
-        console.log('Attempting to create user with email:', email.value)
         const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
         const user = userCredential.user
         console.log('User created successfully:', user.uid)
@@ -77,21 +75,33 @@ export default {
         await setDoc(doc(db, 'users', user.uid), {
           firstName: firstName.value,
           lastName: lastName.value,
-          email: email.value
+          email: email.value,
+          isAdmin: false // Set to false by default for new users
         })
         console.log('User information saved to Firestore')
         
-        // Show success message
-        alert.value = { type: 'success', message: 'Account created successfully! Redirecting to login...' }
-        
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          router.push('/login')
-        }, 2000)
+        // Verify that the user data was saved correctly
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          console.log('User data retrieved from Firestore:', userData)
+          if (userData.email === email.value) {
+            alert.value = { type: 'success', message: 'Account created and verified successfully! Redirecting to login...' }
+            setTimeout(() => {
+              router.push('/login')
+            }, 2000)
+          } else {
+            throw new Error('User data mismatch')
+          }
+        } else {
+          throw new Error('User document not found in Firestore')
+        }
       } catch (error) {
         console.error('Sign up error:', error.message)
         if (error.code === 'auth/email-already-in-use') {
           alert.value = { type: 'danger', message: 'Email already exists. Please use a different email or login.' }
+        } else if (error.message === 'User data mismatch' || error.message === 'User document not found in Firestore') {
+          alert.value = { type: 'danger', message: 'An error occurred while saving user data. Please try again.' }
         } else {
           alert.value = { type: 'danger', message: 'An error occurred during sign up. Please try again.' }
         }

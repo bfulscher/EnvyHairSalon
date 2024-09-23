@@ -36,7 +36,9 @@
 <script>
 import { ref } from 'vue'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
+import { db } from '../firebase'
 
 export default {
   name: 'LoginPage',
@@ -50,22 +52,44 @@ export default {
     const handleLogin = async () => {
       loading.value = true
       alert.value = null
-
       try {
         const auth = getAuth()
-        await signInWithEmailAndPassword(auth, email.value, password.value)
-        alert.value = { type: 'success', message: 'Login successful! Redirecting to booking page...' }
-       
-        // Redirect to booking page after successful login
-        setTimeout(() => {
-          router.push('/booking')
-        }, 1500)
+        const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
+        const user = userCredential.user
+
+        console.log('User authenticated:', user.uid)
+
+        // Check if the user exists in Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        
+        if (!userDoc.exists()) {
+          throw new Error('User data not found in Firestore')
+        }
+
+        const userData = userDoc.data()
+        console.log('User data retrieved:', userData)
+
+        if (userData && userData.isAdmin === true) {
+          console.log('Admin user detected, redirecting to admin dashboard')
+          alert.value = { type: 'success', message: 'Admin login successful! Redirecting to admin dashboard...' }
+          setTimeout(() => {
+            router.push('/admin')
+          }, 1500)
+        } else {
+          console.log('Regular user detected, redirecting to booking page')
+          alert.value = { type: 'success', message: 'Login successful! Redirecting to booking page...' }
+          setTimeout(() => {
+            router.push('/booking')
+          }, 1500)
+        }
       } catch (error) {
-        console.error('Login error:', error.message)
+        console.error('Login error:', error)
         if (error.code === 'auth/user-not-found') {
           alert.value = { type: 'danger', message: 'Email does not exist. Please check your email or sign up.' }
         } else if (error.code === 'auth/wrong-password') {
           alert.value = { type: 'danger', message: 'Incorrect password. Please try again.' }
+        } else if (error.message === 'User data not found in Firestore') {
+          alert.value = { type: 'danger', message: 'User account incomplete. Please contact support.' }
         } else {
           alert.value = { type: 'danger', message: 'An error occurred during login. Please try again.' }
         }
