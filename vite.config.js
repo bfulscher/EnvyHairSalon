@@ -7,7 +7,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@popperjs/core': '@popperjs/core/dist/umd/popper.min.js',
-    }
+      'primevue': path.resolve(__dirname, 'node_modules/primevue'),
+    },
+  },
+  optimizeDeps: {
+    include: ['primevue/config']
+  },
+  build: {
+    commonjsOptions: {
+      esmExternals: true 
+    },
   }
 })
