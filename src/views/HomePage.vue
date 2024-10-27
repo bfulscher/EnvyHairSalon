@@ -1,17 +1,26 @@
+// HomePage.vue
 <template>
   <div class="home">
     <HeroSection />
-    <!-- Add any additional content for your homepage here -->
+    <AboutSection />
   </div>
 </template>
 
 <script>
 import HeroSection from '@/components/HeroSection.vue'
+import AboutSection from '@/components/AboutSection.vue'
 
 export default {
   name: 'HomePage',
   components: {
-    HeroSection
+    HeroSection,
+    AboutSection
   }
 }
 </script>
+
+<style scoped>
+.home {
+  overflow-x: hidden;
+}
+</style>
