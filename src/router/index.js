@@ -1,10 +1,19 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
+import { getAuth } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../firebase'
+
+// Import components
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import SignUpPage from '../views/SignUpPage.vue'
 import BookingPage from '../views/BookingPage.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
+import Inventory from '../views/Inventory.vue'
+import Customers from '../views/Customers.vue'
+import Dashboard from '../views/Dashboard.vue'
+import Products from '@/views/Products.vue'  // Adjust the path as needed
+import Cart from '@/views/Cart.vue'  // Fixed this line
 
 const routes = [
   {
@@ -15,7 +24,8 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: LoginPage
+    component: LoginPage,
+    
   },
   {
     path: '/signup',
@@ -25,14 +35,42 @@ const routes = [
   {
     path: '/booking',
     name: 'Booking',
-    component: BookingPage
+    component: BookingPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/products',
+    name: 'Products',
+    component: Products
   },
   {
     path: '/admin',
-    name: 'AdminDashboard',
     component: AdminDashboard,
     meta: { requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: Dashboard
+      },
+      {
+        path: 'inventory',
+        name: 'Inventory',
+        component: Inventory
+      },
+      {
+        path: 'customer',
+        name: 'Customers',
+        component: Customers
+      }
+    ]
+  },{
+    path: '/cart',
+    name: 'Cart',
+    component: Cart,
+    meta: { requiresAuth: true }
   }
+  
 ]
 
 const router = createRouter({
@@ -40,29 +78,44 @@ const router = createRouter({
   routes
 })
 
-// Add navigation guard to check for admin access
-import { getAuth } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-
+// Navigation guard
 router.beforeEach(async (to, from, next) => {
-  if (to.matched.some(record => record.meta.requiresAdmin)) {
-    const auth = getAuth()
-    const user = auth.currentUser
-    if (user) {
-      const userDoc = await getDoc(doc(db, 'users', user.uid))
-      const userData = userDoc.data()
-      if (userData && userData.isAdmin) {
-        next()
-      } else {
-        next('/booking') // Redirect non-admin users to the booking page
-      }
-    } else {
-      next('/login')
-    }
-  } else {
-    next()
+  const auth = getAuth()
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const currentUser = auth.currentUser
+
+  if ((requiresAuth || requiresAdmin) && !currentUser) {
+    next('/login')
+    return
   }
+
+  // Check if the route is Products
+  if (to.name === 'Products' && !currentUser) {
+    next({
+      path: '/login',
+      query: { redirect: 'products' }
+    })
+    return
+  }
+
+  if (requiresAdmin && currentUser) {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
+      const userData = userDoc.data()
+      
+      if (!userData?.isAdmin) {
+        next('/booking')
+        return
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error)
+      next('/login')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router
