@@ -60,9 +60,10 @@ export default {
     const alert = ref(null)
 
     const handleSignUp = async () => {
-      loading.value = true
-      alert.value = null
+  loading.value = true
+  alert.value = null
 
+<<<<<<< Updated upstream
       try {
         console.log('Starting sign up process...')
         
@@ -97,8 +98,50 @@ export default {
         }
       } finally {
         loading.value = false
+=======
+  try {
+    console.log('Starting sign up process...')
+    
+    // Check if email exists first
+    const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
+    const user = userCredential.user
+    
+    // Save additional user information to Firestore
+    await setDoc(doc(db, 'users', user.uid), {
+      firstName: firstName.value,
+      lastName: lastName.value,
+      email: email.value,
+      createdAt: new Date(),
+      isAdmin: false
+    })
+
+    alert.value = { 
+      type: 'success', 
+      message: 'Account created successfully! Redirecting to login...' 
+    }
+    
+    setTimeout(() => {
+      router.push('/login')
+    }, 2000)
+
+  } catch (error) {
+    console.error('Sign up error:', error)
+    if (error.code === 'auth/email-already-in-use') {
+      alert.value = { 
+        type: 'danger', 
+        message: 'This email is already registered. Please use a different email or login.' 
+      }
+    } else {
+      alert.value = { 
+        type: 'danger', 
+        message: error.message || 'An error occurred during sign up. Please try again.' 
+>>>>>>> Stashed changes
       }
     }
+  } finally {
+    loading.value = false
+  }
+}
 
     const goToLogin = () => {
       router.push('/login')

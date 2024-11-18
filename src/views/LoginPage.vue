@@ -36,7 +36,13 @@
 <script>
 import { ref } from 'vue'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+<<<<<<< Updated upstream
 import { useRouter } from 'vue-router'
+=======
+import { doc, getDoc } from 'firebase/firestore'
+import { useRouter, useRoute } from 'vue-router'
+import { db } from '../firebase'
+>>>>>>> Stashed changes
 
 export default {
   name: 'LoginPage',
@@ -44,6 +50,7 @@ export default {
     const email = ref('')
     const password = ref('')
     const router = useRouter()
+    const route = useRoute()
     const loading = ref(false)
     const alert = ref(null)
 
@@ -53,6 +60,7 @@ export default {
 
       try {
         const auth = getAuth()
+<<<<<<< Updated upstream
         await signInWithEmailAndPassword(auth, email.value, password.value)
         alert.value = { type: 'success', message: 'Login successful! Redirecting to booking page...' }
        
@@ -60,6 +68,31 @@ export default {
         setTimeout(() => {
           router.push('/booking')
         }, 1500)
+=======
+        const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
+        const user = userCredential.user
+
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        
+        if (!userDoc.exists()) {
+          throw new Error('User data not found in Firestore')
+        }
+
+        const userData = userDoc.data()
+        
+        const redirectPath = route.query.redirect === 'booking' ? '/booking' : 
+                           userData.isAdmin ? '/admin' : '/booking'
+        
+        alert.value = { 
+          type: 'success', 
+          message: `Login successful! Redirecting...`
+        }
+        
+        setTimeout(() => {
+          router.push(redirectPath)
+        }, 1500)
+
+>>>>>>> Stashed changes
       } catch (error) {
         console.error('Login error:', error.message)
         if (error.code === 'auth/user-not-found') {

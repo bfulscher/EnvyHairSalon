@@ -1,5 +1,12 @@
 {
   "projects": {
     "default": "envy-hair-salon-project"
+<<<<<<< Updated upstream
   }
+=======
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+>>>>>>> Stashed changes
 }

@@ -13,6 +13,12 @@
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "firebase": "^10.13.1",
+<<<<<<< Updated upstream
+=======
+    "nodemailer": "^6.9.16",
+    "primeicons": "^7.0.0",
+    "primevue": "^3.53.0",
+>>>>>>> Stashed changes
     "vue": "^3.4.37",
     "vue-router": "^4.4.3"
   },
