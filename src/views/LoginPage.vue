@@ -82,11 +82,6 @@ export default {
             router.push('/booking')
           }, 1500)
         }
-        if (this.$route.query.redirect === 'booking') {
-        this.$router.push({ name: 'Booking' })
-      } else {
-        this.$router.push({ name: 'Home' })
-      }
       } catch (error) {
         console.error('Login error:', error)
         if (error.code === 'auth/user-not-found') {

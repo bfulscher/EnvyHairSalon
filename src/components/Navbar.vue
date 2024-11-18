@@ -18,37 +18,21 @@
             <a class="nav-link" @click.prevent="scrollToAbout" href="#">About</a>
           </li>
           <li class="nav-item">
-  <a class="nav-link" @click.prevent="handleAppointmentClick" href="#">Appointment</a>
-</li>
-<li class="nav-item">
-  <router-link class="nav-link" :to="{ name: 'Products' }">Products</router-link>
-</li>
-<li class="nav-item icon-item">
-  <router-link class="nav-link" :to="{ name: 'Cart' }">
-    <i class="bi bi-cart"></i>
-  </router-link>
-</li>
-          <li class="nav-item icon-item dropdown">
-      <a class="nav-link dropdown-toggle" 
-         href="#" 
-         id="navbarDropdown" 
-         role="button" 
-         data-bs-toggle="dropdown" 
-         aria-expanded="false">
-        <i class="bi bi-person-circle"></i>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-        <template v-if="currentUser">
-          <li><span class="dropdown-item-text">{{ currentUser.email }}</span></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" @click="handleLogout">Logout</a></li>
-        </template>
-        <template v-else>
-          <li><router-link class="dropdown-item" to="/login">Login</router-link></li>
-          <li><router-link class="dropdown-item" to="/signup">Sign Up</router-link></li>
-        </template>
-      </ul>
-    </li>
+            <a class="nav-link" href="#">Appointment</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Products</a>
+          </li>
+          <li class="nav-item icon-item">
+            <a class="nav-link" href="#">
+              <i class="bi bi-cart"></i>
+            </a>
+          </li>
+          <li class="nav-item icon-item">
+            <a class="nav-link" href="#">
+              <i class="bi bi-person-circle"></i>
+            </a>
+          </li>
         </ul>
       </div>
     </div>
@@ -56,59 +40,44 @@
 </template>
 
 <script>
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
-
-
 export default {
   name: 'Navbar',
-  data() {
-    return {
-      currentUser: null
-    }
-  },
-  mounted() {
-    // Listen for auth state changes
-    const auth = getAuth()
-    onAuthStateChanged(auth, (user) => {
-      this.currentUser = user
-    })
-  },
   methods: {
-    // Your existing methods...
-
-    async handleAppointmentClick() {
-      console.log('Appointment clicked')
-      
-      if (this.currentUser) {
-        console.log('User is logged in, navigating to booking')
-        this.$router.push('/booking')
+    scrollToAbout() {
+      // First ensure we're on the home page
+      if (this.$route.name !== 'Home') {
+        this.$router.push({ name: 'Home' }).then(() => {
+          // Wait for DOM to update after navigation
+          this.$nextTick(() => {
+            this.performScroll();
+          });
+        });
       } else {
-        console.log('User is not logged in, navigating to login')
-        this.$router.push({
-          path: '/login',
-          query: { redirect: 'booking' }
-        })
+        this.performScroll();
       }
     },
-
-    async handleLogout() {
-      try {
-        const auth = getAuth()
-        await signOut(auth)
-        this.$router.push('/login')
-      } catch (error) {
-        console.error('Logout error:', error)
-      }
-    },
-    async handleCartClick() {
-      if (this.currentUser) {
-        this.$router.push('/cart')
-      } else {
-        this.$router.push({
-          path: '/login',
-          query: { redirect: 'cart' }
-        })
-      }
+    performScroll() {
+      // Add a small delay to ensure the about section is mounted
+      setTimeout(() => {
+        const aboutSection = document.getElementById('about-section');
+        const navbar = document.querySelector('.navbar');
+        
+        if (aboutSection && navbar) {
+          const navbarHeight = navbar.offsetHeight;
+          const topOffset = aboutSection.offsetTop - navbarHeight;
+          
+          console.log('Scrolling to:', topOffset);
+          console.log('About section found at:', aboutSection.offsetTop);
+          console.log('Navbar height:', navbarHeight);
+          
+          window.scrollTo({
+            top: topOffset,
+            behavior: 'smooth'
+          });
+        } else {
+          console.warn('About section or navbar not found');
+        }
+      }, 100);
     }
   }
 }
