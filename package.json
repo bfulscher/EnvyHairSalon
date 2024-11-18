@@ -9,18 +9,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudinary/url-gen": "^1.21.0",
+    "@cloudinary/vue": "^1.12.1",
+    "@mdi/font": "^7.x.x",
     "@popperjs/core": "^2.11.8",
     "@primevue/themes": "^4.1.1",
+    "axios": "^1.7.7",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "firebase": "^10.13.1",
     "primeicons": "^7.0.0",
     "primevue": "^3.53.0",
     "vue": "^3.4.37",
-    "vue-router": "^4.4.3"
+    "vue-router": "^4.4.3",
+    "vuetify": "^3.x.x"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.2",
+    "material-design-icons-iconfont": "^6.7.0",
     "path": "^0.12.7",
     "sass": "^1.80.3",
     "vite": "^5.4.1"

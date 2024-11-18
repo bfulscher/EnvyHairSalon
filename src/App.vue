@@ -1,17 +1,31 @@
 <template>
-  <div id="app">
-    <Navbar />
+  <v-app>
+    <!-- Show Navbar only on non-admin routes -->
+    <Navbar v-if="!isAdminRoute" />
+    
+    <!-- All routes (both admin and non-admin) -->
     <router-view></router-view>
-  </div>
+  </v-app>
 </template>
 
 <script>
 import Navbar from '@/components/Navbar.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 export default {
   name: 'App',
   components: {
     Navbar
+  },
+  setup() {
+    const route = useRoute()
+    const isAdminRoute = computed(() => {
+      return route.path.startsWith('/admin')
+    })
+    return {
+      isAdminRoute
+    }
   }
 }
 </script>
