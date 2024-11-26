@@ -37,7 +37,7 @@
 import { ref } from 'vue'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { db } from '../firebase'
 
 export default {
@@ -46,6 +46,7 @@ export default {
     const email = ref('')
     const password = ref('')
     const router = useRouter()
+    const route = useRoute()
     const loading = ref(false)
     const alert = ref(null)
 
@@ -57,9 +58,6 @@ export default {
         const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
         const user = userCredential.user
 
-        console.log('User authenticated:', user.uid)
-
-        // Check if the user exists in Firestore
         const userDoc = await getDoc(doc(db, 'users', user.uid))
         
         if (!userDoc.exists()) {
@@ -67,26 +65,19 @@ export default {
         }
 
         const userData = userDoc.data()
-        console.log('User data retrieved:', userData)
-
-        if (userData && userData.isAdmin === true) {
-          console.log('Admin user detected, redirecting to admin dashboard')
-          alert.value = { type: 'success', message: 'Admin login successful! Redirecting to admin dashboard...' }
-          setTimeout(() => {
-            router.push('/admin')
-          }, 1500)
-        } else {
-          console.log('Regular user detected, redirecting to booking page')
-          alert.value = { type: 'success', message: 'Login successful! Redirecting to booking page...' }
-          setTimeout(() => {
-            router.push('/booking')
-          }, 1500)
+        
+        const redirectPath = route.query.redirect === 'booking' ? '/booking' : 
+                           userData.isAdmin ? '/admin' : '/booking'
+        
+        alert.value = { 
+          type: 'success', 
+          message: `Login successful! Redirecting...`
         }
-        if (this.$route.query.redirect === 'booking') {
-        this.$router.push({ name: 'Booking' })
-      } else {
-        this.$router.push({ name: 'Home' })
-      }
+        
+        setTimeout(() => {
+          router.push(redirectPath)
+        }, 1500)
+
       } catch (error) {
         console.error('Login error:', error)
         if (error.code === 'auth/user-not-found') {

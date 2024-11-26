@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { getAuth } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-
 // Import components
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
@@ -10,16 +9,21 @@ import SignUpPage from '../views/SignUpPage.vue'
 import BookingPage from '../views/BookingPage.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import Inventory from '../views/Inventory.vue'
-import Customers from '../views/Customers.vue'
-import Dashboard from '../views/Dashboard.vue'
-import Products from '@/views/Products.vue'  // Adjust the path as needed
-import Cart from '@/views/Cart.vue'  // Fixed this line
+import Orders from '../views/Orders.vue'  // Fixed Orders import
+import Dashboard from '../views/Dashboard.vue'  // Fixed Dashboard import
+import Products from '@/views/Products.vue'
+import Cart from '@/views/Cart.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
     component: HomePage
+  },
+  {
+    path: '/about',  // Make sure you have this route
+    name: 'About',
+    component: HomePage  // Or your About component if separate
   },
   {
     path: '/login',
@@ -59,9 +63,9 @@ const routes = [
         component: Inventory
       },
       {
-        path: 'customer',
-        name: 'Customers',
-        component: Customers
+        path: 'orders',  // Changed from 'customer' to 'orders'
+        name: 'Orders',  // Changed from 'Customers' to 'Orders'
+        component: Orders
       }
     ]
   },{
@@ -78,27 +82,29 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard
+// Update the navigation guard
 router.beforeEach(async (to, from, next) => {
   const auth = getAuth()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
   const currentUser = auth.currentUser
 
-  if ((requiresAuth || requiresAdmin) && !currentUser) {
-    next('/login')
+  // Allow access to public routes
+  if (!requiresAuth && !requiresAdmin) {
+    next()
     return
   }
 
-  // Check if the route is Products
-  if (to.name === 'Products' && !currentUser) {
+  // Handle authentication requirement
+  if (requiresAuth && !currentUser) {
     next({
       path: '/login',
-      query: { redirect: 'products' }
+      query: { redirect: to.fullPath }
     })
     return
   }
 
+  // Handle admin requirement
   if (requiresAdmin && currentUser) {
     try {
       const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
@@ -108,6 +114,8 @@ router.beforeEach(async (to, from, next) => {
         next('/booking')
         return
       }
+      next()
+      return
     } catch (error) {
       console.error('Error checking admin status:', error)
       next('/login')
@@ -115,6 +123,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // If all checks pass, proceed
   next()
 })
 

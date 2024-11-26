@@ -43,10 +43,10 @@
 
 <script>
 import { ref } from 'vue'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { createUserWithEmailAndPassword, getAuth, fetchSignInMethodsForEmail } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
-import { auth, db } from '../firebase'
+import { db } from '../firebase'
 
 export default {
   name: 'SignUpPage',
@@ -59,51 +59,70 @@ export default {
     const loading = ref(false)
     const alert = ref(null)
 
+    
+    const validateEmail = (email) => {
+      // Basic email regex pattern
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailPattern.test(email)
+    }
+
     const handleSignUp = async () => {
       loading.value = true
       alert.value = null
 
       try {
-        console.log('Starting sign up process...')
-        
+        // First validate email format
+        if (!validateEmail(email.value)) {
+          alert.value = {
+            type: 'danger',
+            message: 'Please enter a valid email address'
+          }
+          return
+        }
+
+        const auth = getAuth()
         const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
         const user = userCredential.user
-        console.log('User created successfully:', user.uid)
+
+        // Send verification email
+        await sendEmailVerification(user)
         
-        // Save additional user information to Firestore
-        console.log('Saving user information to Firestore...')
+        // Save user data to Firestore
         await setDoc(doc(db, 'users', user.uid), {
           firstName: firstName.value,
           lastName: lastName.value,
           email: email.value,
-          isAdmin: false // Set to false by default for new users
+          createdAt: new Date(),
+          isAdmin: false,
+          emailVerified: false
         })
-        console.log('User information saved to Firestore')
+
+        alert.value = { 
+          type: 'success', 
+          message: 'Please check your email to verify your account before logging in.' 
+        }
         
-        // Verify that the user data was saved correctly
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
-        if (userDoc.exists()) {
-          const userData = userDoc.data()
-          console.log('User data retrieved from Firestore:', userData)
-          if (userData.email === email.value) {
-            alert.value = { type: 'success', message: 'Account created and verified successfully! Redirecting to login...' }
-            setTimeout(() => {
-              router.push('/login')
-            }, 2000)
-          } else {
-            throw new Error('User data mismatch')
+        setTimeout(() => {
+          router.push('/login')
+        }, 3000)
+
+      } catch (error) {
+        console.error('Sign up error:', error)
+        if (error.code === 'auth/email-already-in-use') {
+          alert.value = {
+            type: 'danger',
+            message: 'This email already has an account. Please login instead.'
+          }
+        } else if (error.code === 'auth/invalid-email') {
+          alert.value = {
+            type: 'danger',
+            message: 'Invalid email format. Please check your email address.'
           }
         } else {
-          throw new Error('User document not found in Firestore')
-        }
-      } catch (error) {
-        console.error('Sign up error:', error.message)
-        if (error.code === 'auth/email-already-in-use') {
-          alert.value = { type: 'danger', message: 'Email already exists. Please use a different email or login.' }
-        } else if (error.message === 'User data mismatch' || error.message === 'User document not found in Firestore') {
-          alert.value = { type: 'danger', message: 'An error occurred while saving user data. Please try again.' }
-        } else {
-          alert.value = { type: 'danger', message: 'An error occurred during sign up. Please try again.' }
+          alert.value = { 
+            type: 'danger', 
+            message: error.message || 'An error occurred during sign up. Please try again.' 
+          }
         }
       } finally {
         loading.value = false

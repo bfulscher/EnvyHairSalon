@@ -145,22 +145,39 @@ import { db } from '@/firebase'
   }
   
   const addToCart = async (product) => {
+  console.log('Adding to cart:', product)
   try {
     const auth = getAuth()
     const userId = auth.currentUser?.uid
     
-    if (!userId) return
+    console.log('Current userId:', userId)
+    
+    if (!userId) {
+      console.log('No user logged in')
+      return
+    }
 
+    addingToCart.value = product.id
+    
     const cartRef = collection(db, `users/${userId}/cart`)
-    await addDoc(cartRef, {
+    const newCartItem = {
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
-      quantity: 1,
-      productId: product.id
-    })
+      quantity: product.selectedQuantity || 1,
+      productId: product.id,
+      createdAt: new Date()
+    }
+    
+    console.log('Adding cart item:', newCartItem)
+    
+    const docRef = await addDoc(cartRef, newCartItem)
+    console.log('Added to cart with ID:', docRef.id)
+
   } catch (err) {
     console.error('Error adding to cart:', err)
+  } finally {
+    addingToCart.value = null
   }
 }
   

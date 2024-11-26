@@ -1,14 +1,19 @@
-// NavBar.vue
 <template>
   <nav class="navbar navbar-expand-lg navbar-light w-100">
     <div class="container-fluid">
       <router-link class="navbar-brand" :to="{ name: 'Home' }">
         <h3 class="mb-0">Envy Salon</h3>
       </router-link>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      
+      <button 
+        class="navbar-toggler" 
+        type="button" 
+        data-bs-toggle="collapse" 
+        data-bs-target="#navbarNav"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav align-items-center">
           <li class="nav-item">
@@ -18,98 +23,91 @@
             <a class="nav-link" @click.prevent="scrollToAbout" href="#">About</a>
           </li>
           <li class="nav-item">
-  <a class="nav-link" @click.prevent="handleAppointmentClick" href="#">Appointment</a>
-</li>
-<li class="nav-item">
-  <router-link class="nav-link" :to="{ name: 'Products' }">Products</router-link>
-</li>
-<li class="nav-item icon-item">
-  <router-link class="nav-link" :to="{ name: 'Cart' }">
-    <i class="bi bi-cart"></i>
-  </router-link>
-</li>
-          <li class="nav-item icon-item dropdown">
-      <a class="nav-link dropdown-toggle" 
-         href="#" 
-         id="navbarDropdown" 
-         role="button" 
-         data-bs-toggle="dropdown" 
-         aria-expanded="false">
-        <i class="bi bi-person-circle"></i>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-        <template v-if="currentUser">
-          <li><span class="dropdown-item-text">{{ currentUser.email }}</span></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" @click="handleLogout">Logout</a></li>
-        </template>
-        <template v-else>
-          <li><router-link class="dropdown-item" to="/login">Login</router-link></li>
-          <li><router-link class="dropdown-item" to="/signup">Sign Up</router-link></li>
-        </template>
-      </ul>
-    </li>
+            <a class="nav-link" @click.prevent="handleAppointmentClick" href="#">Appointment</a>
+          </li>
+          <li class="nav-item">
+            <router-link class="nav-link" :to="{ name: 'Products' }">Products</router-link>
+          </li>
+          <li v-if="currentUser" class="nav-item">
+            <router-link class="nav-link" :to="{ name: 'Cart' }">
+              <i class="bi bi-cart"></i>
+            </router-link>
+          </li>
+          <!-- User dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-person-circle"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <template v-if="currentUser">
+                <li><span class="dropdown-item-text">{{ currentUser.email }}</span></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" @click="handleLogout">Logout</a></li>
+              </template>
+              <template v-else>
+                <li><router-link class="dropdown-item" to="/login">Login</router-link></li>
+                <li><router-link class="dropdown-item" to="/signup">Sign Up</router-link></li>
+              </template>
+            </ul>
+          </li>
         </ul>
       </div>
     </div>
   </nav>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
+const currentUser = ref(null)
+const auth = getAuth()
 
-export default {
-  name: 'Navbar',
-  data() {
-    return {
-      currentUser: null
+onMounted(() => {
+  onAuthStateChanged(auth, (user) => {
+    currentUser.value = user
+  })
+})
+
+const scrollToAbout = () => {
+  // If on home page, scroll to about section
+  if (router.currentRoute.value.name === 'Home') {
+    const aboutSection = document.querySelector('#about')
+    if (aboutSection) {
+      aboutSection.scrollIntoView({ behavior: 'smooth' })
     }
-  },
-  mounted() {
-    // Listen for auth state changes
-    const auth = getAuth()
-    onAuthStateChanged(auth, (user) => {
-      this.currentUser = user
+  } else {
+    // If not on home page, navigate to home and then scroll
+    router.push('/').then(() => {
+      setTimeout(() => {
+        const aboutSection = document.querySelector('#about')
+        if (aboutSection) {
+          aboutSection.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 100) // Small delay to ensure DOM is updated
     })
-  },
-  methods: {
-    // Your existing methods...
+  }
+}
 
-    async handleAppointmentClick() {
-      console.log('Appointment clicked')
-      
-      if (this.currentUser) {
-        console.log('User is logged in, navigating to booking')
-        this.$router.push('/booking')
-      } else {
-        console.log('User is not logged in, navigating to login')
-        this.$router.push({
-          path: '/login',
-          query: { redirect: 'booking' }
-        })
-      }
-    },
+const handleAppointmentClick = () => {
+  if (currentUser.value) {
+    router.push('/booking')
+  } else {
+    router.push({
+      path: '/login',
+      query: { redirect: 'booking' }
+    })
+  }
+}
 
-    async handleLogout() {
-      try {
-        const auth = getAuth()
-        await signOut(auth)
-        this.$router.push('/login')
-      } catch (error) {
-        console.error('Logout error:', error)
-      }
-    },
-    async handleCartClick() {
-      if (this.currentUser) {
-        this.$router.push('/cart')
-      } else {
-        this.$router.push({
-          path: '/login',
-          query: { redirect: 'cart' }
-        })
-      }
-    }
+const handleLogout = async () => {
+  try {
+    await signOut(auth)
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
   }
 }
 </script>
