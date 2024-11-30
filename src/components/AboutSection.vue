@@ -1,6 +1,6 @@
 // AboutSection.vue
 <template>
-  <section id="about-section" class="about-section">
+  <section id="about" class="about-section">
     <div class="divider"></div>
     <div class="container py-5">
       <h2 class="about-title text-center mb-5">About Envy Salon</h2>

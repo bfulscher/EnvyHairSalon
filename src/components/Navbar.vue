@@ -72,7 +72,6 @@ onMounted(() => {
 })
 
 const scrollToAbout = () => {
-  // If on home page, scroll to about section
   if (router.currentRoute.value.name === 'Home') {
     const aboutSection = document.querySelector('#about')
     if (aboutSection) {
@@ -86,7 +85,7 @@ const scrollToAbout = () => {
         if (aboutSection) {
           aboutSection.scrollIntoView({ behavior: 'smooth' })
         }
-      }, 100) // Small delay to ensure DOM is updated
+      }, 100)
     })
   }
 }
