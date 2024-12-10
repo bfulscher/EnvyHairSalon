@@ -43,8 +43,13 @@
 
 <script>
 import { ref } from 'vue'
-import { createUserWithEmailAndPassword, getAuth, fetchSignInMethodsForEmail } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { 
+  createUserWithEmailAndPassword, 
+  getAuth, 
+  sendEmailVerification,
+  fetchSignInMethodsForEmail 
+} from 'firebase/auth'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
 import { db } from '../firebase'
 
@@ -59,11 +64,20 @@ export default {
     const loading = ref(false)
     const alert = ref(null)
 
-    
     const validateEmail = (email) => {
-      // Basic email regex pattern
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       return emailPattern.test(email)
+    }
+
+    const checkExistingEmail = async (email) => {
+      try {
+        const auth = getAuth()
+        const signInMethods = await fetchSignInMethodsForEmail(auth, email)
+        return signInMethods.length > 0
+      } catch (error) {
+        console.error('Error checking email:', error)
+        return false
+      }
     }
 
     const handleSignUp = async () => {
@@ -71,7 +85,16 @@ export default {
       alert.value = null
 
       try {
-        // First validate email format
+        // Basic validation
+        if (!firstName.value.trim() || !lastName.value.trim()) {
+          alert.value = {
+            type: 'danger',
+            message: 'Please fill in all fields'
+          }
+          return
+        }
+
+        // Email validation
         if (!validateEmail(email.value)) {
           alert.value = {
             type: 'danger',
@@ -80,49 +103,96 @@ export default {
           return
         }
 
+        // Password validation
+        if (password.value.length < 6) {
+          alert.value = {
+            type: 'danger',
+            message: 'Password must be at least 6 characters long'
+          }
+          return
+        }
+
+        // Check if email already exists
+        const emailExists = await checkExistingEmail(email.value)
+        if (emailExists) {
+          alert.value = {
+            type: 'danger',
+            message: 'This email is already registered. Please login instead.'
+          }
+          return
+        }
+
+        console.log('Creating new user account...')
         const auth = getAuth()
-        const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
+        
+        // Create user
+        const userCredential = await createUserWithEmailAndPassword(
+          auth, 
+          email.value, 
+          password.value
+        )
         const user = userCredential.user
+        console.log('User created:', user.uid)
 
         // Send verification email
         await sendEmailVerification(user)
-        
+        console.log('Verification email sent')
+
         // Save user data to Firestore
-        await setDoc(doc(db, 'users', user.uid), {
+        const userData = {
           firstName: firstName.value,
           lastName: lastName.value,
           email: email.value,
           createdAt: new Date(),
           isAdmin: false,
           emailVerified: false
-        })
-
-        alert.value = { 
-          type: 'success', 
-          message: 'Please check your email to verify your account before logging in.' 
         }
-        
+
+        await setDoc(doc(db, 'users', user.uid), userData)
+        console.log('User data saved to Firestore')
+
+        // Show success message
+        alert.value = {
+          type: 'success',
+          message: 'Account created! Please check your email to verify your account.'
+        }
+
+        // Clear form
+        firstName.value = ''
+        lastName.value = ''
+        email.value = ''
+        password.value = ''
+
+        // Redirect after delay
         setTimeout(() => {
           router.push('/login')
         }, 3000)
 
       } catch (error) {
-        console.error('Sign up error:', error)
-        if (error.code === 'auth/email-already-in-use') {
-          alert.value = {
-            type: 'danger',
-            message: 'This email already has an account. Please login instead.'
-          }
-        } else if (error.code === 'auth/invalid-email') {
-          alert.value = {
-            type: 'danger',
-            message: 'Invalid email format. Please check your email address.'
-          }
-        } else {
-          alert.value = { 
-            type: 'danger', 
-            message: error.message || 'An error occurred during sign up. Please try again.' 
-          }
+        console.error('Signup error:', error)
+        
+        let errorMessage = 'An error occurred during signup.'
+        
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email is already registered. Please login instead.'
+            break
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email format. Please check your email address.'
+            break
+          case 'auth/weak-password':
+            errorMessage = 'Password should be at least 6 characters long.'
+            break
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection.'
+            break
+          default:
+            errorMessage = error.message
+        }
+
+        alert.value = {
+          type: 'danger',
+          message: errorMessage
         }
       } finally {
         loading.value = false
